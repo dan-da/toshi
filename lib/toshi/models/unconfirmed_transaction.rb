@@ -359,7 +359,16 @@ module Toshi
         input_amounts, input_address_ids, output_address_ids = {}, {}, {}
 
         # gather inputs and outputs
-        Toshi.db[:unconfirmed_ledger_entries].where(transaction_id: transaction_ids).each{|entry|
+        if options[:filter_tx_address]
+          # gather only inputs/outputs matching the filter address.
+          filter_address_id = Toshi.db[:addresses].where(address: options[:filter_tx_address]).get(:id)
+          results = Toshi.db[:unconfirmed_ledger_entries].where(transaction_id: transaction_ids)
+                                                         .where(address_id: filter_address_id)
+        else 
+          results = Toshi.db[:unconfirmed_ledger_entries].where(transaction_id: transaction_ids )
+        end
+        
+        results.each{|entry|
           transaction_id = entry[:transaction_id]
           if entry[:input_id]
             input_id = entry[:input_id]
@@ -405,7 +414,7 @@ module Toshi
 
           # inputs
           tx[:inputs] = []
-          if inputs_by_hsh.any?
+          if inputs_by_hsh[transaction.hsh]
             inputs = inputs_by_hsh[transaction.hsh].sort_by{|input| input.position}
             inputs.each{|input|
               parsed_script = Bitcoin::Script.new(input.script)
@@ -427,7 +436,7 @@ module Toshi
 
           # outputs
           tx[:outputs] = []
-          if outputs_by_hsh.any?
+          if outputs_by_hsh[transaction.hsh]
             outputs = outputs_by_hsh[transaction.hsh].sort_by{|output| output.position}
             outputs.each{|output|
               parsed_script = Bitcoin::Script.new(output.script)

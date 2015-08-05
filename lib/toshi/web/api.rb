@@ -161,6 +161,19 @@ module Toshi
         end
       end
 
+      get '/addresses/:address/transactionsfiltered.?:format?' do
+        address = Toshi::Models::Address.where(address: params[:address]).first
+        address = Toshi::Models::UnconfirmedAddress.where(address: params[:address]).first unless address
+        raise NotFoundError unless address
+
+        case format
+        when 'json'
+          json address.to_hash(options={show_txs: true, filter_tx: true, offset: params[:offset], limit: params[:limit]})
+        else
+          raise InvalidFormatError
+        end
+      end
+
       get '/addresses/:address/transactions.?:format?' do
         address = Toshi::Models::Address.where(address: params[:address]).first
         address = Toshi::Models::UnconfirmedAddress.where(address: params[:address]).first unless address
