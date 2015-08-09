@@ -347,11 +347,11 @@ module Toshi
         Toshi.db[:unconfirmed_ledger_entries].multi_insert(entries)
       end
 
-      def to_hash
-        self.class.to_hash_collection([self]).first
+      def to_hash(options = {})
+        self.class.to_hash_collection([self], options).first
       end
 
-      def self.to_hash_collection(transactions)
+      def self.to_hash_collection(transactions, options = {})
         return [] unless transactions.any?
         transaction_ids = transactions.map{|transaction| transaction.id }
 
